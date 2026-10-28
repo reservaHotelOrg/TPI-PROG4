@@ -1,6 +1,5 @@
 using System.Text;
 using Application.Interfaces;
-using Application.Models;
 using Application.Services;
 using Domain.Interfaces;
 using Infrastructure.Data;
@@ -23,28 +22,18 @@ builder.Services.AddOpenApi(options =>
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 });
 
-#region CORS
-// Permite que el frontend (React, en otro puerto/dominio) llame a la API.
-// Sin esto, el navegador bloquea las requests. La URL se configura en "App:FrontendUrl".
-const string FrontendCorsPolicy = "AllowFrontend";
-var frontendUrl = builder.Configuration["App:FrontendUrl"] ?? "http://localhost:5173";
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(FrontendCorsPolicy, policy =>
-    {
-        policy.WithOrigins(frontendUrl)
-            .AllowAnyHeader()   // incluye Authorization (el token)
-            .AllowAnyMethod();
-    });
-});
-#endregion
-
 #region Database
-// La cadena de conexión se lee de appsettings.json (ConnectionStrings:DefaultConnection).
+// La cadena de conexión se lee de ConnectionStrings:DefaultConnection.
+// En local viene de appsettings.json (archivo junto al proyecto) y en Azure de appsettings.Production.json
+// (/home/data, fuera de la carpeta del sitio, para que un deploy no pise la base).
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString))
     throw new Exception("La cadena de conexión 'DefaultConnection' no está configurada en appsettings.json");
+
+// SQLite crea el archivo .db pero no la carpeta: si no existe (por ejemplo /home/data en Azure), se crea.
+var databaseFolder = Path.GetDirectoryName(Path.GetFullPath(new SqliteConnectionStringBuilder(connectionString).DataSource));
+if (!string.IsNullOrEmpty(databaseFolder))
+    Directory.CreateDirectory(databaseFolder);
 
 var connection = new SqliteConnection(connectionString);
 connection.Open();
@@ -85,8 +74,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtOptions.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
             // Así [Authorize(Roles = "...")] sabe en qué claim buscar el rol.
-            RoleClaimType = AuthClaimTypes.Role,
-            NameClaimType = AuthClaimTypes.Email
+            RoleClaimType = "role",
+            NameClaimType = "email"
         };
     });
 
@@ -122,7 +111,6 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IDolarApiService, DolarApiService>();
-builder.Services.AddScoped<IReservationUsdService, ReservationUsdService>();
 #endregion
 
 #region Seed
@@ -159,9 +147,6 @@ app.UseSwaggerUI(options =>
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
-
-// CORS va antes de la autenticación, para que el navegador pueda hacer la consulta previa (preflight).
-app.UseCors(FrontendCorsPolicy);
 
 // Primero se averigua QUIÉN es (lee y valida el token)...
 app.UseAuthentication();

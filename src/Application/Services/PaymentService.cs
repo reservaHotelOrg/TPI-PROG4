@@ -66,32 +66,6 @@ public class PaymentService : IPaymentService
         return PaymentDto.CreateList(payments);
     }
 
-    // Estado de cuenta de la reserva: acreditado, pendiente de acreditar y lo que falta registrar.
-    // Las sumas se hacen en memoria porque SQLite no puede sumar columnas decimal.
-    public ReservationBalanceDto GetReservationBalance(int reservationId, CurrentUser currentUser)
-    {
-        var reservation = GetExistingReservation(reservationId);
-        currentUser.EnsureCanAccess(reservation.UserId);
-        var payments = _paymentRepository.GetByReservation(reservationId).ToList();
-
-        decimal confirmed = payments.Where(p => p.PaymentState).Sum(p => p.Amount);
-        decimal pending = payments.Where(p => !p.PaymentState).Sum(p => p.Amount);
-        decimal remaining = reservation.TotalAmount - confirmed - pending;
-        decimal requiredDeposit = GetRequiredDeposit(reservation);
-
-        return new ReservationBalanceDto(
-            reservation.Id,
-            reservation.TotalAmount,
-            requiredDeposit,
-            confirmed >= requiredDeposit,
-            confirmed,
-            pending,
-            remaining,
-            confirmed >= reservation.TotalAmount,
-            PaymentDto.CreateList(payments)
-        );
-    }
-
     // Registra un pago parcial (seña, saldo, pago en destino...) para una reserva.
     public PaymentDto RegisterPayment(CreatePaymentRequest request, CurrentUser currentUser)
     {
