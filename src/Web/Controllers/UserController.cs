@@ -3,7 +3,6 @@ using Application.Models;
 using Application.Models.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Web.Authorization;
 using Web.Extensions;
 
 namespace Web.Controllers;
@@ -24,7 +23,7 @@ public class UserController : ControllerBase
 
     // Listado completo: solo staff.
     [HttpGet]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public ActionResult<List<UserDto>> GetAll()
     {
         return Ok(_userService.GetAllUsers());
@@ -56,7 +55,7 @@ public class UserController : ControllerBase
 
     // Alta con rol elegido (por ejemplo, un Administrator): solo SuperAdmin.
     [HttpPost("staff")]
-    [Authorize(Roles = AppRoles.SuperAdmin)]
+    [Authorize(Roles = "SuperAdmin")]
     public ActionResult<UserDto> CreateStaff([FromBody] CreateStaffUserRequest request)
     {
         var created = _userService.CreateStaffUser(request);

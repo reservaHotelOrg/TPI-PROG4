@@ -11,8 +11,8 @@ public static class ClaimsPrincipalExtensions
     // así que el token ya fue validado y trae estos datos.
     public static CurrentUser ToCurrentUser(this ClaimsPrincipal principal)
     {
-        var idValue = principal.FindFirst(AuthClaimTypes.UserId)?.Value;
-        var roleValue = principal.FindFirst(AuthClaimTypes.Role)?.Value;
+        var idValue = principal.FindFirst("sub")?.Value;
+        var roleValue = principal.FindFirst("role")?.Value;
 
         if (!int.TryParse(idValue, out int id) || !Enum.TryParse(roleValue, out Role role))
             throw new InvalidOperationException("El token no tiene un id o un rol válido.");

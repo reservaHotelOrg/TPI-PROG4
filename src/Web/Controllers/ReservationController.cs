@@ -3,7 +3,6 @@ using Application.Models;
 using Application.Models.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Web.Authorization;
 using Web.Extensions;
 
 namespace Web.Controllers;
@@ -19,17 +18,15 @@ namespace Web.Controllers;
 public class ReservationController : ControllerBase
 {
     private readonly IReservationService _reservationService;
-    private readonly IReservationUsdService _reservationUsdService;
 
-    public ReservationController(IReservationService reservationService, IReservationUsdService reservationUsdService)
+    public ReservationController(IReservationService reservationService)
     {
         _reservationService = reservationService;
-        _reservationUsdService = reservationUsdService;
     }
 
     // Monitoreo de todas las reservas: solo staff.
     [HttpGet]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public ActionResult<List<ReservationDto>> GetAll()
     {
         return Ok(_reservationService.GetAllReservations());
@@ -49,14 +46,6 @@ public class ReservationController : ControllerBase
         return Ok(_reservationService.GetReservationById(id, User.ToCurrentUser()));
     }
 
-    // Total de la reserva convertido a dólares con la cotización del día (API externa DolarApi).
-    // Mismos permisos que ver la reserva: el dueño o el staff.
-    [HttpGet("{id:int}/total-usd")]
-    public async Task<ActionResult<ReservationUsdTotalDto>> GetTotalInUsd([FromRoute] int id)
-    {
-        return Ok(await _reservationUsdService.GetTotalInUsdAsync(id, User.ToCurrentUser()));
-    }
-
     [HttpGet("user/{userId:int}")]
     public ActionResult<List<ReservationDto>> GetByUser([FromRoute] int userId)
     {
@@ -65,22 +54,15 @@ public class ReservationController : ControllerBase
 
     // Realizar reserva (CU-01): la hace el cliente logueado, a su nombre.
     [HttpPost]
-    [Authorize(Roles = AppRoles.Client)]
+    [Authorize(Roles = "Client")]
     public ActionResult<ReservationDto> Create([FromBody] CreateReservationRequest request)
     {
         var created = _reservationService.CreateReservation(request, User.ToCurrentUser());
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = AppRoles.Staff)]
-    public ActionResult<ReservationDto> Update([FromRoute] int id, [FromBody] UpdateReservationRequest request)
-    {
-        return Ok(_reservationService.UpdateReservation(id, request));
-    }
-
     [HttpPatch("{id:int}/confirm")]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public ActionResult<ReservationDto> Confirm([FromRoute] int id)
     {
         return Ok(_reservationService.ConfirmReservation(id));
@@ -94,7 +76,7 @@ public class ReservationController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public IActionResult Delete([FromRoute] int id)
     {
         _reservationService.DeleteReservation(id);

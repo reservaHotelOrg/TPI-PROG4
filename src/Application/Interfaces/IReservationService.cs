@@ -9,7 +9,6 @@ public interface IReservationService
     ReservationDto GetReservationById(int id, CurrentUser currentUser);
     List<ReservationDto> GetReservationsByUser(int userId, CurrentUser currentUser);
     ReservationDto CreateReservation(CreateReservationRequest request, CurrentUser currentUser);
-    ReservationDto UpdateReservation(int id, UpdateReservationRequest request);
     ReservationDto ConfirmReservation(int id);
     ReservationDto CancelReservation(int id, CurrentUser currentUser);
     void DeleteReservation(int id);

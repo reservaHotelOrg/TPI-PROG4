@@ -3,7 +3,6 @@ using Application.Models;
 using Application.Models.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Web.Authorization;
 
 namespace Web.Controllers;
 
@@ -40,7 +39,7 @@ public class RoomController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public ActionResult<RoomDto> Create([FromBody] RoomRequest request)
     {
         var created = _roomService.CreateRoom(request);
@@ -48,7 +47,7 @@ public class RoomController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public ActionResult<RoomDto> Update(
         [FromRoute] int id,
         [FromBody] RoomRequest request)
@@ -57,7 +56,7 @@ public class RoomController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public IActionResult Delete([FromRoute] int id)
     {
         _roomService.DeleteRoom(id);
