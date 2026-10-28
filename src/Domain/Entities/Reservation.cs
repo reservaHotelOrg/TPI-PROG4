@@ -5,7 +5,7 @@ namespace Domain;
 // Una reserva es la estadía de un cliente: fechas, monto total y código.
 // Arranca pendiente y después se confirma o se cancela.
 // Las propiedades tienen "private set" y las colecciones son de solo lectura: el estado
-// solo cambia por los métodos de negocio (AddRoom, ChangeDates, ConfirmReservation,
+// solo cambia por los métodos de negocio (AddRoom, ConfirmReservation,
 // CancelReservation), que son los que validan las reglas.
 public class Reservation
 {
@@ -64,27 +64,6 @@ public class Reservation
         _detailReservations.Add(new DetailReservation(room, guestsNumber));
 
         TotalAmount = CalculateTotal(StartDate, EndDate);
-    }
-
-    // Cambia las fechas de una reserva pendiente y recalcula el total.
-    // El total nuevo no puede quedar por debajo de lo que ya se registró en pagos.
-    public void ChangeDates(DateTime startDate, DateTime endDate)
-    {
-        if (Type != ReservationState.Pending)
-            throw new AppValidationException("RESERVATION_NOT_EDITABLE");
-
-        if (startDate >= endDate)
-            throw new AppValidationException("INVALID_RESERVATION_DATES");
-
-        decimal newTotal = CalculateTotal(startDate, endDate);
-
-        // Suma en memoria: SQLite no puede sumar columnas decimal.
-        if (newTotal < _payments.Sum(payment => payment.Amount))
-            throw new AppValidationException("RESERVATION_TOTAL_BELOW_REGISTERED_PAYMENTS");
-
-        StartDate = startDate;
-        EndDate = endDate;
-        TotalAmount = newTotal;
     }
 
     // Pasa la reserva a confirmada (cuando se acredita la seña, por ejemplo).

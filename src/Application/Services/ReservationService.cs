@@ -98,42 +98,6 @@ public class ReservationService : IReservationService
         return ReservationDto.Create(reservation);
     }
 
-    // Cambia las fechas de una reserva pendiente. Al cambiarlas, las habitaciones tienen que
-    // seguir libres (sin contar esta misma reserva) y el nuevo total no puede quedar por
-    // debajo de lo que ya se registró en pagos. El nuevo total se recalcula solo.
-    public ReservationDto UpdateReservation(int id, UpdateReservationRequest request)
-    {
-        var reservation = _reservationRepository.GetById(id)
-            ?? throw new NotFoundException("RESERVATION_NOT_FOUND");
-
-        // Confirmada o cancelada no se edita: quedaría pisar el historial.
-        if (reservation.Type != ReservationState.Pending)
-            throw new AppValidationException("RESERVATION_NOT_EDITABLE");
-
-        var startDate = request.StartDate ?? reservation.StartDate;
-        var endDate = request.EndDate ?? reservation.EndDate;
-
-        if (startDate == reservation.StartDate && endDate == reservation.EndDate)
-            return ReservationDto.Create(reservation);
-
-        ValidateReservationDates(startDate, endDate);
-
-        foreach (var detail in reservation.DetailReservations)
-        {
-            if (!_reservationRepository.IsRoomAvailable(detail.RoomId, startDate, endDate, reservation.Id))
-                throw new AppValidationException("ROOM_NOT_AVAILABLE_FOR_DATES");
-        }
-
-        // La entidad valida que siga pendiente, recalcula el total y controla que no quede
-        // por debajo de lo ya pagado.
-        reservation.ChangeDates(startDate, endDate);
-
-        _reservationRepository.Update(reservation);
-        _unitOfWork.SaveChanges();
-
-        return ReservationDto.Create(reservation);
-    }
-
     // Pasa la reserva a confirmada.
     public ReservationDto ConfirmReservation(int id)
     {

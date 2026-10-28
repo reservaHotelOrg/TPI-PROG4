@@ -45,14 +45,13 @@ public class ReservationRepository : Repository<Reservation>, IReservationReposi
 
     // Una habitación está ocupada si alguna reserva sin cancelar la usa en fechas que se pisan.
     // El día de check-out de una reserva puede ser el check-in de la siguiente (por eso el < y el >).
-    public bool IsRoomAvailable(int roomId, DateTime start, DateTime end, int? excludeReservationId = null)
+    public bool IsRoomAvailable(int roomId, DateTime start, DateTime end)
     {
         return !_context.DetailReservations
             .Include(detail => detail.Reservation)
             .Any(detail =>
                 detail.RoomId == roomId
                 && detail.Reservation.Type != ReservationState.Canceled
-                && (excludeReservationId == null || detail.ReservationId != excludeReservationId)
                 && start < detail.Reservation.EndDate
                 && end > detail.Reservation.StartDate);
     }

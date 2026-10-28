@@ -2,7 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Application.Interfaces;
-using Application.Models;
 using Domain;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -28,11 +27,11 @@ public class JwtTokenService : ITokenService
         // Claims: datos clave -> valor que viajan dentro del token.
         var claims = new List<Claim>
         {
-            new(AuthClaimTypes.UserId, user.Id.ToString()),
-            new(AuthClaimTypes.GivenName, user.Name),
-            new(AuthClaimTypes.FamilyName, user.LastName),
-            new(AuthClaimTypes.Email, user.Mail),
-            new(AuthClaimTypes.Role, user.Type.ToString())   // "SuperAdmin", "Administrator" o "Client"
+            new("sub", user.Id.ToString()),
+            new("given_name", user.Name),
+            new("family_name", user.LastName),
+            new("email", user.Mail),
+            new("role", user.Type.ToString())   // "SuperAdmin", "Administrator" o "Client"
         };
 
         var token = new JwtSecurityToken(

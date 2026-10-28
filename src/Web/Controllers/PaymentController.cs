@@ -3,7 +3,6 @@ using Application.Models;
 using Application.Models.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Web.Authorization;
 using Web.Extensions;
 
 namespace Web.Controllers;
@@ -24,7 +23,7 @@ public class PaymentController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public ActionResult<List<PaymentDto>> GetAll()
     {
         return Ok(_paymentService.GetAllPayments());
@@ -42,12 +41,6 @@ public class PaymentController : ControllerBase
         return Ok(_paymentService.GetPaymentsByReservation(reservationId, User.ToCurrentUser()));
     }
 
-    [HttpGet("reservation/{reservationId:int}/balance")]
-    public ActionResult<ReservationBalanceDto> GetReservationBalance([FromRoute] int reservationId)
-    {
-        return Ok(_paymentService.GetReservationBalance(reservationId, User.ToCurrentUser()));
-    }
-
     // Registrar un pago: el dueño de la reserva o el staff (por ejemplo, pago en destino).
     [HttpPost]
     public ActionResult<PaymentDto> Register([FromBody] CreatePaymentRequest request)
@@ -58,14 +51,14 @@ public class PaymentController : ControllerBase
 
     // Acreditar un pago: solo staff (un cliente no puede acreditarse su propia seña).
     [HttpPatch("{id:int}/confirm")]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public ActionResult<PaymentDto> Confirm([FromRoute] int id)
     {
         return Ok(_paymentService.ConfirmPayment(id));
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = AppRoles.Staff)]
+    [Authorize(Roles = "Administrator,SuperAdmin")]
     public IActionResult Delete([FromRoute] int id)
     {
         _paymentService.DeletePayment(id);
