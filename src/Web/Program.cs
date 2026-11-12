@@ -118,6 +118,10 @@ builder.Services.AddScoped<IDolarApiService, DolarApiService>();
 // mail y contraseña en appsettings.Development.json en local (no se sube a git) y variables de entorno en Azure).
 builder.Services.Configure<SuperAdminSeedOptions>(builder.Configuration.GetSection(SuperAdminSeedOptions.SectionName));
 builder.Services.AddScoped<SuperAdminSeeder>();
+
+// Datos de demo para la defensa (sección "DemoSeed"): se cargan solo si la base no tiene habitaciones.
+builder.Services.Configure<DemoSeedOptions>(builder.Configuration.GetSection(DemoSeedOptions.SectionName));
+builder.Services.AddScoped<DemoDataSeeder>();
 #endregion
 
 // Middleware global de manejo de excepciones (NotFound -> 404, Validation -> 400,
@@ -133,6 +137,7 @@ using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<ApplicationContext>().Database.Migrate();
 
     scope.ServiceProvider.GetRequiredService<SuperAdminSeeder>().Seed();
+    scope.ServiceProvider.GetRequiredService<DemoDataSeeder>().Seed();
 }
 
 // Configure the HTTP request pipeline.
